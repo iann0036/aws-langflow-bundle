@@ -197,12 +197,13 @@ class AWSAPICallComponent(Component):
                 elif param["type"] == "blob":
                     field = FileInput(
                         display_name=param["name"],
-                        name="method_field_"+param["name"],
+                        name="method_filefield_"+param["name"],
                         info=param["description"],
                         required=param["required"],
                         advanced=not param["required"],
+                        file_types=["png"] # TODO: fix me to support all types - https://github.com/langflow-ai/langflow/issues/9933
                     )
-                    build_config["method_field_"+param["name"]] = field.to_dict()
+                    build_config["method_filefield_"+param["name"]] = field.to_dict()
                 elif param["type"] == "integer" or param["type"] == "long":
                     field = IntInput(
                         display_name=param["name"],
@@ -305,6 +306,11 @@ class AWSAPICallComponent(Component):
                     else:
                         msg = f"Unsupported type for parameter '{param_name}': {type(field_value)}"
                         raise ValueError(msg)
+            elif hasattr(self, "method_filefield_"+param_name):
+                field_value = getattr(self, "method_filefield_"+param_name)
+                if field_value is not None and field_value != "":
+                    with open(str(field_value), "rb") as f:
+                        returns[param_name] = f.read()
         
         result = method(**returns)
         
